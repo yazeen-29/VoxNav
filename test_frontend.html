@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Before Consequence - Test Frontend</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .button {
+            padding: 12px 24px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #results {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+        }
+        .action-buttons {
+            margin-top: 20px;
+        }
+        .action-buttons button {
+            margin-right: 10px;
+            padding: 10px 20px;
+        }
+        #continue { background-color: #28a745; }
+        #continue:hover { background-color: #218838; }
+        #cancel { background-color: #dc3545; }
+        #cancel:hover { background-color: #c82333; }
+        #verify { background-color: #ffc107; color: #212529; }
+        #verify:hover { background-color: #e0a800; }
+        .explanation {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        .privacy-log {
+            margin-top: 15px;
+        }
+        .privacy-log h3 { margin-top: 0; color: #2c3e50; }
+        .privacy-log ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .used { color: #27ae60; }
+        .not-used { color: #e74c3c; }
+        .status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status.connected { background-color: #d4edda; color: #155724; }
+        .status.disconnected { background-color: #f8d7da; color: #721c24; }
+        .status.connecting { background-color: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>Context Before Consequence - Test Frontend</h1>
+    <div>
+        <span>Status: </span>
+        <span id="connection-status" class="status disconnected">Disconnected</span>
+    </div>
+
+    <h2>Test Actions</h2>
+    <button class="button" id="send-doc">Send Document</button>
+    <button class="button" id="delete-file">Delete File</button>
+    <button class="button" id="cancel-appt">Cancel Appointment</button>
+    <button class="button" id="transfer">Transfer Money</button>
+
+    <div id="results" style="display: none;">
+        <h2>Results</h2>
+        <div class="explanation" id="explanation"></div>
+        <div class="privacy-log">
+            <h3>Data Used:</h3>
+            <ul id="used-list" class="used"></ul>
+            <h3>Data NOT Used:</h3>
+            <ul id="not-used-list" class="not-used"></ul>
+        </div>
+        <div class="action-buttons">
+            <button class="button" id="continue">Continue</button>
+            <button class="button" id="cancel">Cancel</button>
+            <button class="button" id="verify">Verify (see more context)</button>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws = null;
+        const statusEl = document.getElementById('connection-status');
+        const resultsDiv = document.getElementById('results');
+        const explanationEl = document.getElementById('explanation');
+        const usedListEl = document.getElementById('used-list');
+        const notUsedListEl = document.getElementById('not-used-list');
+
+        function connect() {
+            statusEl.textContent = 'Connecting...';
+            statusEl.className = 'status connecting';
+            
+            ws = new WebSocket('ws://localhost:8000/ws/audio');
+
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleResponse(data);
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+                console.log('WebSocket disconnected');
+                // Try to reconnect after 3 seconds
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusEl.textContent = 'Error';
+                statusEl.className = 'status disconnected';
+                ws.close();
+            };
+        }
+
+        function handleResponse(data) {
+            // Hide results initially
+            resultsDiv.style.display = 'none';
+
+            // Check for error
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            // Show explanation
+            explanationEl.textContent = data.explanation || 'No explanation provided.';
+
+            // Populate privacy log
+            usedListEl.innerHTML = '';
+            notUsedListEl.innerHTML = '';
+
+            if (data.privacy_log && data.privacy_log.used) {
+                data.privacy_log.used.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    usedListEl.appendChild(li);
+                });
+            }
+            if (data.privacy_log && data.privacy_log.not_used) {
+                data.privacy_log.not_used.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    notUsedListEl.appendChild(li);
+                });
+            }
+
+            // Show results
+            resultsDiv.style.display = 'block';
+        }
+
+        function sendAction(actionType, target) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('WebSocket not connected. Please wait a moment and try again.');
+                return;
+            }
+
+            const actionData = {
+                action: actionType,
+                target: target
+            };
+
+            ws.send(JSON.stringify(actionData));
+            console.log('Sent action:', actionData);
+        }
+
+        // Event listeners for buttons
+        document.getElementById('send-doc').addEventListener('click', () => {
+            sendAction('SEND_DOCUMENT', {
+                recipient: 'john@example.com',
+                document_id: 'Medical_Report.pdf'
+            });
+        });
+
+        document.getElementById('delete-file').addEventListener('click', () => {
+            sendAction('DELETE_FILE', {
+                document_id: 'temp_file.txt'
+            });
+        });
+
+        document.getElementById('cancel-appt').addEventListener('click', () => {
+            sendAction('CANCEL_APPT', {
+                recipient: 'Dr. Smith'
+            });
+        });
+
+        document.getElementById('transfer').addEventListener('click', () => {
+            sendAction('TRANSFER', {
+                recipient: 'Alice',
+                amount: 100
+            });
+        });
+
+        // Decision buttons (for demo, just log)
+        document.getElementById('continue').addEventListener('click', () => {
+            console.log('User chose to Continue');
+            alert('Action would continue in real system.');
+            resultsDiv.style.display = 'none';
+        });
+
+        document.getElementById('cancel').addEventListener('click', () => {
+            console.log('User chose to Cancel');
+            alert('Action cancelled.');
+            resultsDiv.style.display = 'none';
+        });
+
+        document.getElementById('verify').addEventListener('click', () => {
+            console.log('User chose to Verify');
+            alert('Verifying would show more detailed context.');
+            // In a real system, we might request additional context
+            resultsDiv.style.display = 'none';
+        });
+
+        // Initialize connection
+        connect();
+    </script>
+</body>
+</html>

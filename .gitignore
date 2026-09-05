@@ -125,3 +125,7 @@ cython_debug
 # VoxNav specific
 backend/venv/
 demo-webapp+browser-extension/backend/venv/
+demo-webapp+browser-extension/demo-webapp/node_modules/
+demo-webapp+browser-extension/demo-webapp/dist/
+mobile-companion/node_modules/
+mobile-companion/.expo/

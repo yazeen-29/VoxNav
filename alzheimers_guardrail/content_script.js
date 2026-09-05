@@ -1,0 +1,287 @@
+// Content script that runs in the demo webapp
+// Intercepts voxnav-action events and sends them directly to backend WebSocket
+
+console.log('[Content Script] LOADED - Action interceptor ready (Direct WebSocket)');
+
+// Visual confirmation that content script is running
+document.body.style.border = '3px solid blue';
+document.body.style.padding = '5px';
+console.log('[Content Script] Applied blue border and padding');
+
+// Listen for the custom event from the demo webapp
+window.addEventListener('voxnav-action', (event) => {
+  const action = event.detail;
+  console.log('[Content Script] Intercepted action:', action);
+
+  // Send action directly to backend WebSocket
+  console.log('[Content Script] Sending action to backend WebSocket:', action);
+  
+  // Create WebSocket connection
+  const ws = new WebSocket('ws://localhost:8000/ws/audio');
+  
+  ws.onopen = () => {
+    console.log('[Content Script] WebSocket connected');
+    ws.send(JSON.stringify(action));
+  };
+  
+  ws.onmessage = (event) => {
+    console.log('[Content Script] Received response from WebSocket:', event.data);
+    try {
+      const response = JSON.parse(event.data);
+      
+      // Check for error
+      if (response.error) {
+        alert(`Error: ${response.error}`);
+        return;
+      }
+      
+      // Display the explanation in a proper decision UI
+      if (response.explanation) {
+        showDecisionUI(response.explanation, response.privacy_log, response.action || action.action);
+      } else {
+        alert('Action processed (no explanation available)');
+      }
+    } catch (e) {
+      console.error('[Content Script] Failed to parse WebSocket response:', e);
+      alert('Error processing response');
+    }
+    
+    // Close the WebSocket connection
+    ws.close();
+  };
+  
+  ws.onerror = (error) => {
+    console.error('[Content Script] WebSocket error:', error);
+    alert('WebSocket connection error');
+    ws.close();
+  };
+  
+  ws.onclose = () => {
+    console.log('[Content Script] WebSocket connection closed');
+  };
+});
+
+// Function to create and display the decision UI
+function showDecisionUI(explanation, privacyLog, actionType) {
+  // Create modal backdrop
+  const backdrop = document.createElement('div');
+  backdrop.style.position = 'fixed';
+  backdrop.style.top = '0';
+  backdrop.style.left = '0';
+  backdrop.style.width = '100%';
+  backdrop.style.height = '100%';
+  backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+  backdrop.style.display = 'flex';
+  backdrop.style.alignItems = 'center';
+  backdrop.style.justifyContent = 'center';
+  backdrop.style.zIndex = '10000';
+  backdrop.style.fontFamily = 'Arial, sans-serif';
+
+  // Create modal content
+  const modal = document.createElement('div');
+  modal.style.backgroundColor = 'white';
+  modal.style.borderRadius = '8px';
+  modal.style.padding = '24px';
+  modal.style.width = '90%';
+  modal.style.maxWidth = '400px';
+  modal.style.maxHeight = '80vh';
+  modal.style.overflowY = 'auto';
+  modal.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+
+  // Create title
+  const title = document.createElement('h2');
+  title.textContent = 'Context Before Consequence';
+  title.style.color = '#2c3e50';
+  title.style.textAlign = 'center';
+  title.style.marginTop = '0';
+  title.style.marginBottom = '20px';
+
+  // Create explanation text
+  const explanationEl = document.createElement('p');
+  explanationEl.textContent = explanation;
+  explanationEl.style.lineHeight = '1.6';
+  explanationEl.style.color = '#34495e';
+  explanationEl.style.marginBottom = '20px';
+
+  // Create privacy log section
+  const privacySection = document.createElement('div');
+  privacySection.style.backgroundColor = '#ecf0f1';
+  privacySection.style.borderRadius = '4px';
+  privacySection.style.padding = '16px';
+  privacySection.style.marginBottom = '24px';
+
+  const privacyTitle = document.createElement('h3');
+  privacyTitle.textContent = 'Privacy Audit';
+  privacyTitle.style.color = '#2c3e50';
+  privacyTitle.style.marginTop = '0';
+  privacyTitle.style.marginBottom = '12px';
+  privacyTitle.style.fontSize = '16px';
+
+  const privacyDetails = document.createElement('p');
+  privacyDetails.style.margin = '0';
+  privacyDetails.style.fontSize = '14px';
+  privacyDetails.style.color = '#7f8c8d';
+
+  // Format privacy log - handle both formats (from backend and potential mock)
+  let usedMessages = 0, usedContacts = 0, usedFiles = 0, usedCalendar = 0;
+  let notUsedMessages = 0, notUsedFiles = 0, notUsedCalendar = 0, notUsedContacts = 0;
+  
+  if (privacyLog.used && typeof privacyLog.used === 'object') {
+    // New format from backend: { used: [strings], not_used: [strings] }
+    // We need to parse the strings to count items
+    const usedItems = privacyLog.used || [];
+    const notUsedItems = privacyLog.not_used || [];
+    
+    // Count used items
+    usedItems.forEach(item => {
+      if (item.includes('message')) usedMessages++;
+      else if (item.includes('contact') || item.startsWith('Recipient:') || item.startsWith('Participant:')) usedContacts++;
+      else if (item.includes('file') || item.startsWith('Document:')) usedFiles++;
+      else if (item.includes('calendar') || item.includes('event')) usedCalendar++;
+    });
+    
+    // Count not used items - extract numbers from strings like "47 other messages"
+    notUsedItems.forEach(item => {
+      // Extract number from string
+      const match = item.match(/^(\d+)/);
+      if (match) {
+        const count = parseInt(match[1]);
+        if (item.includes('message') || item.includes('messages')) {
+          notUsedMessages = count;
+        } else if (item.includes('file') || item.includes('files')) {
+          notUsedFiles = count;
+        } else if (item.includes('calendar') || item.includes('event')) {
+          notUsedCalendar = count;
+        } else if (item.includes('contact') || item.includes('contacts')) {
+          notUsedContacts = count;
+        }
+      }
+    });
+  } else if (privacyLog.used && privacyLog.used.messages !== undefined) {
+    // Old mock format: { used: { messages: X, contacts: Y }, notUsed: { ... } }
+    usedMessages = privacyLog.used.messages || 0;
+    usedContacts = privacyLog.used.contacts || 0;
+    usedFiles = privacyLog.used.files || 0;
+    usedCalendar = privacyLog.used.calendar || 0;
+    notUsedMessages = privacyLog.notUsed.messages || 0;
+    notUsedFiles = privacyLog.notUsed.files || 0;
+    notUsedCalendar = privacyLog.notUsed.calendar || 0;
+    notUsedContacts = privacyLog.notUsed.contacts || 0;
+  }
+
+  // Build USED line - only show non-zero counts
+  const usedParts = [];
+  if (usedMessages > 0) usedParts.push(`${usedMessages} message${usedMessages !== 1 ? 's' : ''}`);
+  if (usedContacts > 0) usedParts.push(`${usedContacts} contact${usedContacts !== 1 ? 's' : ''}`);
+  if (usedFiles > 0) usedParts.push(`${usedFiles} file${usedFiles !== 1 ? 's' : ''}`);
+  if (usedCalendar > 0) usedParts.push(`${usedCalendar} event${usedCalendar !== 1 ? 's' : ''}`);
+  
+  // Build NOT USED line - only show non-zero counts
+  const notUsedParts = [];
+  if (notUsedMessages > 0) notUsedParts.push(`${notUsedMessages} message${notUsedMessages !== 1 ? 's' : ''}`);
+  if (notUsedFiles > 0) notUsedParts.push(`${notUsedFiles} file${notUsedFiles !== 1 ? 's' : ''}`);
+  if (notUsedCalendar > 0) notUsedParts.push(`${notUsedCalendar} event${notUsedCalendar !== 1 ? 's' : ''}`);
+  if (notUsedContacts > 0) notUsedParts.push(`${notUsedContacts} contact${notUsedContacts !== 1 ? 's' : ''}`);
+
+  privacyDetails.innerHTML = `
+    <strong>USED:</strong> ${usedParts.length > 0 ? usedParts.join(', ') : 'none'}<br>
+    <strong>NOT USED:</strong> ${notUsedParts.length > 0 ? notUsedParts.join(', ') : 'none'}
+  `;
+
+  privacySection.appendChild(privacyTitle);
+  privacySection.appendChild(privacyDetails);
+
+  // Create button container
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.display = 'flex';
+  buttonContainer.style.justifyContent = 'flex-end';
+  buttonContainer.style.gap = '12px';
+
+  // Create Continue button
+  const continueBtn = document.createElement('button');
+  continueBtn.textContent = 'Continue';
+  continueBtn.style.backgroundColor = '#27ae60';
+  continueBtn.style.color = 'white';
+  continueBtn.style.border = 'none';
+  continueBtn.style.padding = '10px 20px';
+  continueBtn.style.borderRadius = '4px';
+  continueBtn.style.cursor = 'pointer';
+  continueBtn.style.fontWeight = 'bold';
+  continueBtn.style.transition = 'background-color 0.2s';
+  continueBtn.onmouseover = () => continueBtn.style.backgroundColor = '#219a52';
+  continueBtn.onmouseout = () => continueBtn.style.backgroundColor = '#27ae60';
+  continueBtn.onclick = () => {
+    document.body.removeChild(backdrop);
+    console.log('[Content Script] User chose to Continue');
+  };
+
+  // Create Cancel button
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.backgroundColor = '#e74c3c';
+  cancelBtn.style.color = 'white';
+  cancelBtn.style.border = 'none';
+  cancelBtn.style.padding = '10px 20px';
+  cancelBtn.style.borderRadius = '4px';
+  cancelBtn.style.cursor = 'pointer';
+  cancelBtn.style.fontWeight = 'bold';
+  cancelBtn.style.transition = 'background-color 0.2s';
+  cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = '#c0392b';
+  cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = '#e74c3c';
+  cancelBtn.onclick = () => {
+    document.body.removeChild(backdrop);
+    console.log('[Content Script] User chose to Cancel');
+  };
+
+  // Create Verify button
+  const verifyBtn = document.createElement('button');
+  verifyBtn.textContent = 'Verify';
+  verifyBtn.style.backgroundColor = '#3498db';
+  verifyBtn.style.color = 'white';
+  verifyBtn.style.border = 'none';
+  verifyBtn.style.padding = '10px 20px';
+  verifyBtn.style.borderRadius = '4px';
+  verifyBtn.style.cursor = 'pointer';
+  verifyBtn.style.fontWeight = 'bold';
+  verifyBtn.style.transition = 'background-color 0.2s';
+  verifyBtn.onmouseover = () => verifyBtn.style.backgroundColor = '#2980b9';
+  verifyBtn.onmouseout = () => verifyBtn.style.backgroundColor = '#3498db';
+  verifyBtn.onclick = () => {
+    document.body.removeChild(backdrop);
+    console.log('[Content Script] User chose to Verify');
+    // In a real implementation, this might trigger additional verification steps
+  };
+
+  buttonContainer.appendChild(cancelBtn);
+  buttonContainer.appendChild(verifyBtn);
+  buttonContainer.appendChild(continueBtn);
+
+  // Assemble modal
+  modal.appendChild(title);
+  modal.appendChild(explanationEl);
+  modal.appendChild(privacySection);
+  modal.appendChild(buttonContainer);
+
+  // Add modal to backdrop
+  backdrop.appendChild(modal);
+
+  // Add backdrop to body
+  document.body.appendChild(backdrop);
+}
+
+// Optional: Keep a simple test to background.js to verify extension is loaded
+// Commented out for now to reduce complexity - can be added back if needed
+/*
+setTimeout(() => {
+  try {
+    console.log('[Content Script] Sending test message to background...');
+    browser.runtime.sendMessage({test: 'content-script-ready'}, (response) => {
+      console.log('[Content Script] Received test response:', response);
+    });
+  } catch (e) {
+    console.error('[Content Script] Failed to send test message:', e);
+  }
+}, 1000);
+*/
+
+console.log('[Content Script] SETUP COMPLETE - Ready to intercept actions');

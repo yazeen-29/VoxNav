@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Context Companion",
+    "slug": "context-companion",
+    "version": "0.1.0",
+    "android": {
+      "package": "com.contextcompanion.app",
+      "permissions": ["POST_NOTIFICATIONS"],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Context Companion to use Face ID to unlock your private context."
+        }
+      ]
+    ]
+  }
+}

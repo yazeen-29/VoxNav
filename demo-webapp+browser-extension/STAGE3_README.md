@@ -20,8 +20,9 @@
   - Visual confirmation: blue border and padding around the demo webapp
 
 ### Demo Webapp (`demo-webapp/`)
-- Unchanged: four action buttons that dispatch `voxnav-action` events
-- Button actions: Send Doc, Delete File, Cancel Appt, Transfer $
+- React/Vite dashboard with four action cards: Send document, Delete file, Cancel appointment, and Transfer $100
+- Warm, keyboard-accessible UI with a synthetic-data label and a live activity status
+- The Firefox content script captures the action buttons directly; no page-to-extension custom event is used
 
 ## How to Run the Demo
 
@@ -51,10 +52,14 @@
    - Select the `manifest.json` file in `demo-webapp+browser-extension/browser-extension/`
    - The extension should now be active (you'll see a blue border around the demo webapp)
 
-3. **Open the demo webapp**:
-   - Open `demo-webapp+browser-extension/demo-webapp/index.html` in Firefox
-   - Or serve it with a simple HTTP server (e.g., `python3 -m http.server 3000` from the demo-webapp directory)
-   - The extension will intercept actions from the demo webapp
+3. **Start the React demo webapp**:
+   ```bash
+   cd demo-webapp+browser-extension/demo-webapp
+   npm install
+   npm run dev
+   ```
+   - Open `http://127.0.0.1:3000` in Firefox.
+   - The extension will intercept the four action cards directly.
 
 4. **Test the actions**:
    - Click any of the four buttons (Send Doc, Delete File, Cancel Appt, Transfer $)
@@ -81,6 +86,8 @@ Each action will show a privacy log indicating exactly which synthetic data item
 ✅ **Risk Scoring**: Transparent weighted formula based on action type and context  
 ✅ **Cross-browser Compatibility**: Works in Firefox (Manifest V2)  
 ✅ **Performance Optimized**: Efficient context retrieval and explanation generation  
+✅ **Local Encrypted Context Vault**: User-added reminders and notes are encrypted before browser storage, with a recovery-key flow
+✅ **Optional Ciphertext-Only Sync**: Supabase client and row-level-security migration are included; configuration is required before sync is enabled
 
 ## Next Steps for Further Enhancement
 
