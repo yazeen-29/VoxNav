@@ -129,3 +129,6 @@ demo-webapp+browser-extension/demo-webapp/node_modules/
 demo-webapp+browser-extension/demo-webapp/dist/
 mobile-companion/node_modules/
 mobile-companion/.expo/
+mobile-companion/.env.local
+supabase/functions/.env
+supabase/functions/.env.local

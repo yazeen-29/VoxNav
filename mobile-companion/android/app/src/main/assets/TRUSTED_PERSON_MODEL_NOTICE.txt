@@ -1,0 +1,26 @@
+Trusted-person local model notice
+=================================
+
+This app bundles these local inference assets solely for the explicitly
+requested trusted-person prototype. They are never downloaded at runtime and
+camera photos are not sent to a server.
+
+1. face_landmarker.task
+   Source: Google MediaPipe model distribution
+   URL: https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+   SHA-256: 64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff
+   Used for: one-face validation and blink-coefficient measurement.
+   License: Apache License 2.0. MediaPipe sample source is Apache-2.0.
+
+2. mobilefacenet.tflite
+   Source: hugocornellier/face_detection_tflite, commit 50c784adaa9f40c722affb1d4412674f25e1fe0c
+   URL: https://github.com/hugocornellier/face_detection_tflite
+   SHA-256: be4bc7cfc53f7bc336d0f28b1ab92535f618c913a422b683210750f6b5354854
+   Used for: a 192-value, normalized local face template after explicit consent.
+   License: Apache License 2.0 (repository LICENSE; its model documentation
+   states the included TFLite assets are Apache-2.0 licensed).
+
+Neither asset is a presentation-attack detector. A blink movement check is a
+basic interaction signal, not proof of identity or liveness. Do not use it for
+financial authentication, medical decisions, emergency access, surveillance,
+or high-risk identification.

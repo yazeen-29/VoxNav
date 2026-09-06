@@ -1,0 +1,34 @@
+SYNTHETIC DEMO CLINICAL REPORT — NOT A REAL PATIENT RECORD
+For Context Companion Level 5 prototype testing only.
+
+Patient identifier: DEMO-001
+Document date: 2026-09-06
+Document type: synthetic follow-up note
+
+This entirely fictional note is supplied to test a human-reviewed clinical-context workflow.
+It must not be used for diagnosis, treatment, or decisions about a real person.
+
+Documented cognitive-screening results
+- MMSE score: 22/30.
+- MoCA score: 19/30.
+
+Documented findings and changes
+- UTI positive.
+- B12 deficiency noted.
+- Started donepezil 5 mg once daily.
+
+Prototype reviewer checklist
+1. Paste only this synthetic text into the Level 5 Clinical context review box.
+2. Select Extract facts for review.
+3. Confirm only the facts displayed correctly.
+4. Check that the Composite snapshot displays confirmed context alongside the
+   activity timeline.
+5. Verify that no diagnosis, alert suppression, or automatic threshold change
+   is claimed.
+
+Expected prototype candidates
+- MMSE score: 22/30
+- MoCA score: 19/30
+- Documented finding: UTI mentioned in the supplied text
+- Documented finding: B12 deficiency mentioned in the supplied text
+- Medication change: Started donepezil

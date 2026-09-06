@@ -4,15 +4,28 @@
   "version": "0.1.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
     "start": "expo start",
+    "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "8.4.4",
+    "@supabase/supabase-js": "^2.115.0",
     "expo": "^54.0.0",
+    "expo-camera": "~17.0.10",
+    "expo-crypto": "~15.0.9",
+    "expo-dev-client": "~6.0.21",
     "expo-local-authentication": "~17.0.9",
+    "expo-notifications": "~0.32.17",
     "expo-secure-store": "^15.0.0",
-    "react": "^19.1.0",
-    "react-native": "^0.81.0"
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-qrcode-svg": "^6.3.22",
+    "react-native-svg": "15.12.1",
+    "react-native-url-polyfill": "^4.0.0",
+    "react-native-web": "^0.21.0"
   }
 }

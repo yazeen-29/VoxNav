@@ -36,7 +36,7 @@ All contextual data is synthetic and should remain clearly treated as demo data.
 
 ```text
 /home/gsk/VoxNav/
-├── HANDOFF.md
+├── planning/HANDOFF.md
 ├── alzheimers_guardrail/
 │   ├── backend/main.py                 # FastAPI WebSocket endpoint: /ws/audio
 │   ├── risk_engine/scorer.py           # transparent scorer/policy
@@ -142,5 +142,5 @@ Implement rapid-click protection plus a short “Why am I seeing this?” disclo
 ## Clean Prompt for a New Chat
 
 ```text
-Read /home/gsk/VoxNav/HANDOFF.md. Continue the Context Before Consequence project from the suggested next task. Work directly in the existing files, keep Firefox Manifest V2 compatibility, and verify changes before reporting completion.
+Read /home/gsk/VoxNav/planning/HANDOFF.md. Continue the Context Before Consequence project from the suggested next task. Work directly in the existing files, keep Firefox Manifest V2 compatibility, and verify changes before reporting completion.
 ```

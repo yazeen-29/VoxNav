@@ -1,0 +1,2 @@
+[functions.extract-care-facts]
+verify_jwt = true
