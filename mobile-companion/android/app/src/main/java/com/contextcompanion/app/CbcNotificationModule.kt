@@ -61,6 +61,9 @@ class CbcNotificationModule(private val context: ReactApplicationContext) : Reac
         putString("packageName", record.optString("packageName"))
         putString("keyword", record.optString("keyword"))
         putString("preview", record.optString("preview"))
+        putString("kind", record.optString("kind", "notification_match"))
+        if (record.has("previousAmount")) putDouble("previousAmount", record.optLong("previousAmount").toDouble())
+        if (record.has("currentAmount")) putDouble("currentAmount", record.optLong("currentAmount").toDouble())
         putDouble("createdAt", record.optLong("createdAt").toDouble())
       })
     }

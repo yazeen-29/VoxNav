@@ -42,6 +42,8 @@ npx expo run:android
 
 That requires Android Studio, the Android SDK, and a connected Android device/emulator. Alternatively configure an Expo EAS development build. The implementation intentionally does not request overlay/accessibility permission and does not attempt to control banking apps.
 
+When two payment-like previews from the same selected app/sender contain different amounts within the local review window, the app labels the newer candidate **Possible amount change** (for example, ₹100 → ₹200). This is only a comparison warning: the patient must verify the original conversation and explicitly review it. The app never approves, blocks, or sends a payment, and the short-lived comparison metadata stays on the device.
+
 ## Saving a sent message (explicit share only)
 
 Android chat apps do not reliably expose sent messages as notifications, and this app does not scrape chats or use Accessibility. To save an outgoing message, select it in the chat app, use Android's **Share** action, and choose **Context Companion**. The shared text becomes a temporary review candidate; it is still not saved until the person taps **Save reminder**.
